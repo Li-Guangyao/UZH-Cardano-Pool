@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: staking-flask
+    env_file:
+      - app/blockfrost.env
+    volumes:
+      - ./app:/app
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: staking-nginx
+    ports:
+      - "81:81"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web
+    restart: unless-stopped
