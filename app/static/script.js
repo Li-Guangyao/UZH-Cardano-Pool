@@ -12,39 +12,59 @@ function loadPools(page = 1) {
         return;
       }
 
-      isCurrentPageValid = data.pools.length> 0;
+      isCurrentPageValid = data.pools.length > 0;
 
       output.innerHTML = `
-        <table style="border-collapse: collapse; width: 100%;">
-          <thead>
-        <tr style="background-color:rgb(246, 246, 246);">
-          <th style="border: 1px solid #ddd; padding: 8px;">Pool ID</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Margin Cost</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Fixed Cost</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Declared Pledge</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Live Delegators</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Live Size</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Live Stake</th>
-        </tr>
-          </thead>
-          <tbody>
-        ${data.pools.map(pool => `
-          <tr>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.pool_id}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.margin_cost}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.fixed_cost}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.declared_pledge}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.live_delegators}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.live_size}</td>
-            <td style="border: 1px solid #ddd; padding: 8px;">${pool.live_stake}</td>
-          </tr>
-        `).join('')}
-          </tbody>
-        </table>
+        <div style="display: flex; flex-direction: column; gap: 24px; align-items: center;">
+          ${data.pools.map(pool => `
+            <div style="
+              width: 95%;
+              background: #fff;
+              border-radius: 18px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+              padding: 24px 28px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+            ">
+              <!-- 1st line -->
+              <div style="display: flex; align-items: center; gap: 18px; font-size: 1.1em; font-weight: bold;">
+                <span style="color: #333;">${pool.pool_id}</span>
+                <span style="color: #888;">${pool.metadata_name? "pool name:"+ pool.metadata_name : ''}</span>
+              </div>
+              <!-- 2nd line-->
+              <div style="display: flex; flex-wrap: wrap; gap: 18px; color: #444; font-size: 0.98em;">
+                <span>Margin Cost: <b>${pool.margin_cost}</b></span>
+                <span>Fixed Cost: <b>${formatNumber(pool.fixed_cost / 1e6)} UZH ₳</b></span>
+                <span>Declared Pledge: <b>${formatNumber(pool.declared_pledge / 1e6)} UZH ₳</b></span>
+                <span>Live Delegators: <b>${pool.live_delegators}</b></span>
+                <span>Live Size: <b>${formatNumber(pool.live_size, 6)}</b></span>
+                <span>Live Stake: <b>${formatNumber(pool.live_stake / 1e6)} UZH ₳</b></span>
+                <span>Last Epoch Reward: <b>Epoch ${pool.reward_latest.epoch}: ${formatNumber(pool.reward_latest.rewards / 1e6)} UZH ₳</b></span>
+              </div>
+              <!-- 3rd line -->
+              <div style="display: flex; flex-wrap: wrap; gap: 18px; color: #666; font-size: 0.95em;">
+                <span>Description: ${pool.metadata_description || ''}</span>
+                <span>Ticker: ${pool.metadata_ticker || ''}</span>
+                <span>
+                  Homepage: 
+                  ${pool.homepage ? `<a href="${pool.homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.homepage}</a>` : ''}
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       `;
 
+      function formatNumber(value, decimalPlaces = 2) {
+        const parts = value.toFixed(decimalPlaces).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+        return parts.join('.');
+      }
+
     }).catch(err => {
-      console.err("Fetch error:", err)
+      console.error("Fetch error:", err)
     });
 }
 
