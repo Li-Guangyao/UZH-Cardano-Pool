@@ -60,7 +60,7 @@ function loadPools(page = 1) {
             <span>Ticker: ${pool.metadata_ticker || ''}</span>
             <span>
           Homepage: 
-          ${pool.metadata_homepage ? `<a href="${pool.homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.metadata_homepage}</a>` : ''}
+          ${pool.metadata_homepage ? `<a href="${pool.metadata_homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.metadata_homepage}</a>` : ''}
             </span>
           </div>
         </div>
