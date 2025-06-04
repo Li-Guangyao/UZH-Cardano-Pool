@@ -60,7 +60,7 @@ def get_pools():
             pool_info = detail_data
             
             if isinstance(history_data, list) and len(history_data) > 0:
-                latest = history_data[0]
+                latest = history_data[1]
                 pool_info["reward_latest"] = {
                     "rewards": latest.get("rewards"),
                     "epoch": latest.get("epoch")
