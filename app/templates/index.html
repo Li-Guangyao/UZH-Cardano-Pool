@@ -16,11 +16,45 @@
   </style>
 </head>
 <body>
-  <h1 style="text-align: center; color: #0028A5;">UZH-Cardano Staking Pools Info</h1>
+  <div style="display: flex; align-items: center; justify-content: center;">
+    <img src="/static/uzh-logo.png" alt="UZH Logo" style="height: 7.18em; margin-right: 16px; align-self: flex-start; margin-top: 10px;">
+    <h1 style="text-align: center; color: #0028A5; font-size: 2.56em; margin: 30px 30px 30px 0;">UZH-Cardano Staking Pools Info</h1>
+  </div>
   <div id="pool-list">Loading...</div>
-  <button id="prev" style="margin: 10px;">Previous Page</button>
+  <style>
+    :root {
+      --uzh-blue: #0028A5;
+      --uzh-cyan: #4AC9E3;
+      --uzh-apple: #A5D233;
+      --uzh-gold: #FFC845;
+      --uzh-orange: #FC4C02;
+      --uzh-berry: #BF0D3E;
+      --uzh-grey: #666666;
+      --uzh-light-grey: #FAFAFA;
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+    button {
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 500;
+      padding: 0.75rem 1.5rem;
+      background: var(--uzh-blue);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: var(--uzh-cyan);
+    }
+  </style>
+  <button id="prev" style="margin: 10px; margin-left: 50px;">Previous Page</button>
   <button id="next" style="margin: 10px;">Next Page</button>
 
   <script src="/static/script.js"></script>
+
+  <footer style="position: fixed; right: 0; bottom: 0; text-align: right; width: 100%; padding: 10px 20px; background: none; font-size: 0.95em; color: #555;">
+    BDLT Group. Universität Zürich &copy; 2025
+  </footer>
 </body>
 </html>
