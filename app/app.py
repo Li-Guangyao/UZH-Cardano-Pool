@@ -1,4 +1,5 @@
 from curses import meta
+from importlib import metadata
 from multiprocessing import pool
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from werkzeug.utils import secure_filename
@@ -66,24 +67,8 @@ def get_pools():
                     "epoch": latest.get("epoch")
             }
                 
-            if metadata_data and "url" in metadata_data:
-                pool_info["metadata_url"] = metadata_data["url"]
-                # Try to fetch and parse the JSON from the metadata URL
-                try:
-                    # If the URL is relative (starts with /), prepend server address
-                    meta_url = metadata_data["url"]
-                    if meta_url.startswith("/"):
-                        pool_info["metadata_fetch_error"] = f"The metadata URL is relative, cannot be fetched publicly."
-                    meta_response = requests.get(meta_url)
-                    if meta_response.status_code == 200:
-                        meta_json = meta_response.json()
-                        # Add all fields from meta_json into pool_info with 'metadata_' prefix
-                        for k, v in meta_json.items():
-                            pool_info[f"metadata_{k}"] = v
-                    else:
-                        pool_info["metadata_fetch_error"] = f"Failed to fetch metadata JSON: {meta_response.status_code}"
-                except Exception as e:
-                    pool_info["metadata_fetch_error"] = str(e)
+            for k, v in metadata_data.items():
+                pool_info[f"metadata_{k}"] = v
                 
             pools_data.append(pool_info)
 
@@ -132,7 +117,23 @@ def get_pool_metadata(pool_id):
         metadata_url = f"{BASE_URL}/pools/{pool_id}/metadata"
         response = requests.get(metadata_url, headers=headers)
         if response.status_code == 200:
-            return response.json()
+            metadata = response.json()
+            homepage_url = metadata.get("homepage")
+            if homepage_url and homepage_url.startswith("http"):
+                try:
+                    homepage_response = requests.get(homepage_url)
+                    if homepage_response.status_code == 200:
+                        homepage_json = homepage_response.json()
+                        metadata.update(homepage_json)
+                        return metadata
+                    else:
+                        metadata["homepage_fetch_error"] = f"Failed to fetch homepage JSON: {homepage_response.status_code}"
+                        return metadata
+                except Exception as e:
+                    metadata["homepage_fetch_error"] = str(e)
+                    return metadata
+            else:
+                return metadata
         else:
             return {"error": "Failed to fetch pool metadata", "status_code": response.status_code}
     except Exception as e:
@@ -157,7 +158,8 @@ def upload_file():
         return jsonify({"error": "Only .json files allowed"}), 400
 
     filename = secure_filename(file.filename)
-    unique_name = f"{uuid.uuid4().hex}_{filename}"
+    # Use only 22 hex chars from uuid (32-10=22)
+    unique_name = f"{uuid.uuid4().hex[:22]}_{filename}"
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
 
     file.save(file_path)

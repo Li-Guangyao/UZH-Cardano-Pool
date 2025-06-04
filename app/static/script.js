@@ -42,7 +42,7 @@ function loadPools(page = 1) {
           <!-- 1st line -->
           <div style="display: flex; align-items: center; gap: 18px; font-size: 1.1em; font-weight: bold;">
             <span style="color: #333;">${pool.pool_id}</span>
-            <span style="color: #888;">${pool.metadata_name? "pool name:"+ pool.metadata_name : ''}</span>
+            <span style="color: #888; margin-left: 30px;">${pool.metadata_name? pool.metadata_name: ''}</span>
           </div>
           <!-- 2nd line-->
           <div style="display: flex; flex-wrap: wrap; gap: 18px; color: #444; font-size: 0.98em;">
@@ -60,7 +60,7 @@ function loadPools(page = 1) {
             <span>Ticker: ${pool.metadata_ticker || ''}</span>
             <span>
           Homepage: 
-          ${pool.homepage ? `<a href="${pool.homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.homepage}</a>` : ''}
+          ${pool.metadata_homepage ? `<a href="${pool.homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.metadata_homepage}</a>` : ''}
             </span>
           </div>
         </div>
