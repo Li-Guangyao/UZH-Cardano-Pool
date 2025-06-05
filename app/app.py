@@ -29,7 +29,7 @@ def index():
 @app.route("/api/pools")
 def get_pools():
     page = request.args.get("page", default=1, type=int)
-    count = request.args.get("count", default=20, type=int)
+    count = request.args.get("count", default=100, type=int)
     headers = {"accept": "application/json"}
  
     if count>100:
@@ -52,6 +52,10 @@ def get_pools():
 
         pool_ids = pool_ids_response.json()
         pools_data = []
+        
+        total_pools = len(pool_ids)
+        total_stakes = 0
+        total_delegators = 0
 
         for pid in pool_ids:
             detail_data = get_pool_details(pid)
@@ -59,6 +63,11 @@ def get_pools():
             metadata_data = get_pool_metadata(pid)
             
             pool_info = detail_data
+            
+            if not 'error' in detail_data:
+                total_stakes += int(pool_info.get("live_stake", 0) or 0)
+                total_delegators += int(pool_info.get("live_delegators", 0) or 0)
+                
             
             if isinstance(history_data, list) and len(history_data) > 0:
                 latest = history_data[1]
@@ -71,11 +80,16 @@ def get_pools():
                 pool_info[f"metadata_{k}"] = v
                 
             pools_data.append(pool_info)
+        
 
         return jsonify({
             "page": page,
             "count": count,
-            "pools": pools_data
+            "pools": pools_data,
+            "total_pools": total_pools,
+            "total_delegators": total_delegators,
+            "total_stakes": total_stakes,
+            "current_epoch": get_current_epoch_info()
         })
     except Exception as e:
         import traceback
@@ -136,6 +150,18 @@ def get_pool_metadata(pool_id):
                 return metadata
         else:
             return {"error": "Failed to fetch pool metadata", "status_code": response.status_code}
+    except Exception as e:
+        return {"error": str(e)}
+    
+def get_current_epoch_info():
+    headers = {"accept": "application/json"}
+    try:
+        epoch_url = f"{BASE_URL}/epochs/latest"
+        response = requests.get(epoch_url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Failed to fetch epoch info", "status_code": response.status_code}
     except Exception as e:
         return {"error": str(e)}
     

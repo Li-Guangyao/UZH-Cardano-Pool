@@ -2,7 +2,7 @@ let currentPage = 1;
 let isCurrentPageValid = true;
 
 function loadPools(page = 1) {
-  fetch(`/api/pools?page=${page}&count=20`)
+  fetch(`/api/pools?page=${page}&count=100`)
     .then(response => response.json())
     .then(data => {
       const output = document.getElementById('pool-list');
@@ -16,10 +16,35 @@ function loadPools(page = 1) {
 
       // Show the epoch of the first pool at the top center
       let epochInfo = '';
-      if (data.pools && data.pools.length > 0 && data.pools[0].reward_latest && typeof data.pools[0].reward_latest.epoch !== 'undefined') {
+      if (data.pools && data.current_epoch) {
+        const epochData = data.current_epoch;
+        const totalPools = data.total_pools;
+        const totalDelegators = data.total_delegators;
+        const totalStakes = data.total_stakes;
+
         epochInfo = `
-          <div style="text-align: center; font-size: 1.3em; font-weight: 500; margin-bottom: 18px;">
-        Current Epoch: ${data.pools[0].reward_latest.epoch +1 }
+          <div style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 24px;
+        border: 2px solid #0028A5;
+        border-radius: 14px;
+        padding: 14px 0 14px 0;
+        margin-top: 18px;
+        margin-bottom: 18px;
+        font-size: 1.08em;
+        background: #f8faff;
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
+          ">
+        ${epochData.epoch !== undefined ? `<span><b>Current Epoch:</b> ${epochData.epoch}</span>` : ''}
+        ${epochData.block_count !== undefined ? `<span><b>Blocks:</b> ${epochData.block_count}</span>` : ''}
+        ${epochData.tx_count !== undefined ? `<span><b>Transactions:</b> ${epochData.tx_count}</span>` : ''}
+        ${totalPools !== undefined ? `<span><b>Total Pools:</b> ${totalPools}</span>` : ''}
+        ${totalDelegators !== undefined ? `<span><b>Total Delegators:</b> ${totalDelegators}</span>` : ''}
+        ${totalStakes !== undefined ? `<span><b>Total Stakes:</b> ${formatNumber(totalStakes / 1e6)} UZH ₳</span>` : ''}
           </div>
         `;
       }
