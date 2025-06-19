@@ -66,27 +66,24 @@ function loadPools(page = 1) {
         ">
           <!-- 1st line -->
           <div style="display: flex; align-items: center; gap: 18px; font-size: 1.1em; font-weight: bold;">
-            <span style="color: #333;">${pool.pool_id}</span>
-            <span style="color: #888; margin-left: 30px;">${pool.metadata_name? pool.metadata_name: ''}</span>
+        <span style="color: #333;">${pool.pool_id}</span>
+        ${pool.metadata_name ? `<span style="color: #888; margin-left: 30px;">${pool.metadata_name}</span>` : ''}
           </div>
           <!-- 2nd line-->
           <div style="display: flex; flex-wrap: wrap; gap: 18px; color: #444; font-size: 0.98em;">
-            <span>Margin Cost: <b>${pool.margin_cost}</b></span>
-            <span>Fixed Cost: <b>${formatNumber(pool.fixed_cost / 1e6)} UZH ₳</b></span>
-            <span>Declared Pledge: <b>${formatNumber(pool.declared_pledge / 1e6)} UZH ₳</b></span>
-            <span>Live Delegators: <b>${pool.live_delegators}</b></span>
-            <span>Live Size: <b>${formatNumber(pool.live_size, 6)}</b></span>
-            <span>Live Stake: <b>${formatNumber(pool.live_stake / 1e6)} UZH ₳</b></span>
-            <span>Reward: <b> ${formatNumber(pool.reward_latest.rewards / 1e6)} UZH ₳</b></span>
+        ${pool.margin_cost !== undefined ? `<span>Margin Cost: <b>${pool.margin_cost}</b></span>` : ''}
+        ${pool.fixed_cost !== undefined ? `<span>Fixed Cost: <b>${formatNumber(pool.fixed_cost / 1e6)} UZH ₳</b></span>` : ''}
+        ${pool.declared_pledge !== undefined ? `<span>Declared Pledge: <b>${formatNumber(pool.declared_pledge / 1e6)} UZH ₳</b></span>` : ''}
+        ${pool.live_delegators !== undefined ? `<span>Live Delegators: <b>${pool.live_delegators}</b></span>` : ''}
+        ${pool.live_size !== undefined ? `<span>Live Size: <b>${formatNumber(pool.live_size, 6)}</b></span>` : ''}
+        ${pool.live_stake !== undefined ? `<span>Live Stake: <b>${formatNumber(pool.live_stake / 1e6)} UZH ₳</b></span>` : ''}
+        ${pool.reward_latest && pool.reward_latest.rewards !== undefined ? `<span>Reward: <b> ${formatNumber(pool.reward_latest.rewards / 1e6)} UZH ₳</b></span>` : ''}
           </div>
           <!-- 3rd line -->
           <div style="display: flex; flex-wrap: wrap; gap: 18px; color: #666; font-size: 0.95em;">
-            <span>Description: ${pool.metadata_description || ''}</span>
-            <span>Ticker: ${pool.metadata_ticker || ''}</span>
-            <span>
-          Homepage: 
-          ${pool.metadata_homepage ? `<a href="${pool.metadata_homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.metadata_homepage}</a>` : ''}
-            </span>
+        ${pool.metadata_description ? `<span>Description: ${pool.metadata_description}</span>` : ''}
+        ${pool.metadata_ticker ? `<span>Ticker: ${pool.metadata_ticker}</span>` : ''}
+        ${pool.metadata_homepage ? `<span>Homepage: <a href="${pool.metadata_homepage}" target="_blank" style="color:#1976d2;text-decoration:underline;">${pool.metadata_homepage}</a></span>` : ''}
           </div>
         </div>
           `).join('')}
