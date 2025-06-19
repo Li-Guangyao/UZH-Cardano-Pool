@@ -69,12 +69,12 @@ def get_pools():
                 total_delegators += int(pool_info.get("live_delegators", 0) or 0)
                 
             
-            if isinstance(history_data, list) and len(history_data) > 0:
+            if isinstance(history_data, list) and len(history_data) > 1:
                 latest = history_data[1]
                 pool_info["reward_latest"] = {
                     "rewards": latest.get("rewards"),
                     "epoch": latest.get("epoch")
-            }
+                }
                 
             for k, v in metadata_data.items():
                 pool_info[f"metadata_{k}"] = v
