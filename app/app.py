@@ -7,6 +7,11 @@ import requests
 import os
 from dotenv import load_dotenv
 import uuid
+import re
+import json
+import time
+from urllib.parse import urlparse
+from threading import RLock
 
 load_dotenv("blockfrost.env")
 UPLOAD_FOLDER = "/data/uploads"
@@ -21,6 +26,42 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # API_KEY = os.getenv("BLOCKFROST_API_KEY")
 # PROJECT_ID = API_KEY
 BASE_URL = "http://172.17.0.1:3000"
+BASE_URL_FILE = "http://172.17.0.1:81"
+
+# --- 简易线程安全缓存 ---
+_metadata_cache = {}
+_cache_lock = RLock()
+CACHE_TTL = 600 # 10分钟
+
+def _get_cached_metadata(filepath):
+    """从缓存中读取，如果缓存有效则返回，否则返回 None"""
+    with _cache_lock:
+        entry = _metadata_cache.get(filepath)
+        if not entry:
+            return None
+        mtime, timestamp, data = entry
+        # 文件修改时间
+        try:
+            current_mtime = os.path.getmtime(filepath)
+        except FileNotFoundError:
+            _metadata_cache.pop(filepath, None)
+            return None
+        # 缓存过期或文件被修改则失效
+        if time.time() - timestamp > CACHE_TTL or mtime != current_mtime:
+            _metadata_cache.pop(filepath, None)
+            return None
+        return data
+    
+    
+def _set_cached_metadata(filepath, data):
+    """写入缓存"""
+    with _cache_lock:
+        try:
+            mtime = os.path.getmtime(filepath)
+        except FileNotFoundError:
+            return
+        _metadata_cache[filepath] = (mtime, time.time(), data)
+
 
 @app.route("/")
 def index():
@@ -125,33 +166,91 @@ def get_pool_history(pool_id):
         return {"error": str(e)}
     
 
+# def get_pool_metadata(pool_id):
+#     headers = {"accept": "application/json"}
+#     try:
+#         metadata_url = f"{BASE_URL}/pools/{pool_id}/metadata"
+#         response = requests.get(metadata_url, headers=headers)
+#         if response.status_code == 200:
+#             metadata = response.json()
+#             return metadata
+#         else:
+#             return {"error": "Failed to fetch pool metadata", "status_code": response.status_code}
+#     except Exception as e:
+#         return {"error": str(e)}
+    
+
 def get_pool_metadata(pool_id):
     headers = {"accept": "application/json"}
     try:
         metadata_url = f"{BASE_URL}/pools/{pool_id}/metadata"
-        response = requests.get(metadata_url, headers=headers)
-        if response.status_code == 200:
-            metadata = response.json()
-            homepage_url = metadata.get("homepage")
-            if homepage_url and homepage_url.startswith("http"):
-                try:
-                    homepage_response = requests.get(homepage_url)
-                    if homepage_response.status_code == 200:
-                        homepage_json = homepage_response.json()
-                        metadata.update(homepage_json)
-                        return metadata
-                    else:
-                        metadata["homepage_fetch_error"] = f"Failed to fetch homepage JSON: {homepage_response.status_code}"
-                        return metadata
-                except Exception as e:
-                    metadata["homepage_fetch_error"] = str(e)
-                    return metadata
-            else:
-                return metadata
-        else:
+        response = requests.get(metadata_url, headers=headers, timeout=10)
+
+        if response.status_code != 200:
             return {"error": "Failed to fetch pool metadata", "status_code": response.status_code}
+
+        metadata = response.json()
+
+        # ---------- 补充缺失字段 ----------
+        required_fields = [
+            "description",
+            "name",
+            "ticker",
+            "homepage",
+        ]
+        missing = [f for f in required_fields if not metadata.get(f)]
+        meta_url = metadata.get("url")
+
+        if missing and meta_url:
+            try:
+                # meta_url = re.sub(r"^https?://[\d\.]+:\d+", BASE_URL_FILE, meta_url)
+                # meta_res = requests.get(meta_url, timeout=5)
+                # if meta_res.status_code == 200:
+                #     meta_extra = meta_res.json()
+
+                #     # 对应关系（markdown里是无前缀的字段）
+                #     metadata["description"] = meta_extra.get("description")
+                #     metadata["name"] =  meta_extra.get("name")
+                #     metadata["ticker"] = meta_extra.get("ticker")
+                #     metadata["homepage"] =  meta_extra.get("homepage")
+                
+                filename = os.path.basename(meta_url)
+                local_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                
+                cached = _get_cached_metadata(local_path)
+                if cached:
+                    meta_extra = cached
+                else:
+                    if not os.path.exists(local_path):
+                        metadata["metadata_fetch_error"] = f"File not found: {local_path}"
+                        return metadata
+
+                    with open(local_path, "r", encoding="utf-8") as f:
+                        try:
+                            meta_extra = json.load(f)
+                        except Exception:
+                            # fallback: 解析 key: value 格式
+                            meta_extra = {}
+                            for line in f:
+                                if ":" in line:
+                                    k, v = line.split(":", 1)
+                                    meta_extra[k.strip()] = v.strip()
+                    # 写入缓存
+                    _set_cached_metadata(local_path, meta_extra)
+                
+                lower_extra = {k.lower(): v for k, v in meta_extra.items()}
+                for key in required_fields:
+                    if not metadata.get(key):
+                        metadata[key] = lower_extra.get(key)
+                
+            except Exception as inner_err:
+                metadata["metadata_fetch_error"] = str(inner_err)
+
+        return metadata
+
     except Exception as e:
         return {"error": str(e)}
+
     
 def get_current_epoch_info():
     headers = {"accept": "application/json"}
@@ -196,9 +295,6 @@ def upload_file():
 @app.route("/files/<path:filename>")
 def serve_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-
-
 
 
 if __name__ == "__main__":

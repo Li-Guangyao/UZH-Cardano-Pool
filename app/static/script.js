@@ -4,7 +4,7 @@ let isCurrentPageValid = true;
 function loadPools(page = 1) {
   fetch(`/api/pools?page=${page}&count=100`)
     .then(response => response.json())
-    .then(data => {
+    .then(async data => {
       const output = document.getElementById('pool-list');
       if (!data.pools || data.pools.length === 0) {
         output.textContent = 'No data found';
@@ -48,6 +48,8 @@ function loadPools(page = 1) {
           </div>
         `;
       }
+
+
 
       output.innerHTML = `
         ${epochInfo}
